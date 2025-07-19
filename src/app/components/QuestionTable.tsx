@@ -1,10 +1,8 @@
-// Updated QuestionTable.tsx without pagination
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import questions from '../data/questions.json';
-import { Check, Star, StarOff, Video, ArrowUpDown } from 'lucide-react';
+import { Star, StarOff, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 
 interface Question {
@@ -27,62 +25,47 @@ export default function QuestionTable() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const savedStars = JSON.parse(localStorage.getItem('starred') || '[]');
-            const savedCompleted = JSON.parse(localStorage.getItem('completed') || '[]');
-            const savedCompany = localStorage.getItem('selectedCompany') || '';
-            const savedTopic = localStorage.getItem('selectedTopic') || '';
-            setStarred(savedStars);
-            setCompleted(savedCompleted);
-            setSelectedCompany(savedCompany);
-            setSelectedTopic(savedTopic);
+            setStarred(JSON.parse(localStorage.getItem('starred') || '[]'));
+            setCompleted(JSON.parse(localStorage.getItem('completed') || '[]'));
+            setSelectedCompany(localStorage.getItem('selectedCompany') || '');
+            setSelectedTopic(localStorage.getItem('selectedTopic') || '');
         }
     }, []);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('starred', JSON.stringify(starred));
-            localStorage.setItem('completed', JSON.stringify(completed));
-        }
+        localStorage.setItem('starred', JSON.stringify(starred));
+        localStorage.setItem('completed', JSON.stringify(completed));
     }, [starred, completed]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('selectedCompany', selectedCompany);
-            localStorage.setItem('selectedTopic', selectedTopic);
-        }
+        localStorage.setItem('selectedCompany', selectedCompany);
+        localStorage.setItem('selectedTopic', selectedTopic);
     }, [selectedCompany, selectedTopic]);
 
     const toggleStar = (title: string) => {
-        setStarred(prev =>
-            prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
-        );
+        setStarred(prev => prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]);
     };
 
     const toggleComplete = (title: string) => {
-        setCompleted(prev =>
-            prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
-        );
+        setCompleted(prev => prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]);
     };
 
-    const allCompanies = Array.from(
-        new Set(questions.flatMap(q => q.companies.split(',').map(c => c.trim())))
+    const allCompanies = Array.from(new Set(questions.flatMap(q => q.companies.split(',').map(c => c.trim())))).sort();
+    //   const allTopics = Array.from(new Set(questions.flatMap(q => q.topics.split(',').map(t => t.trim())))).sort();
+    const allTopics = Array.from(
+        new Set(
+            questions.flatMap(q =>
+                q.topics.split(',').map(t => t.trim()).filter(t => t.length > 0)
+            )
+        )
     ).sort();
 
-    const allTopics = Array.from(
-        new Set(questions.flatMap(q => q.topics.split(',').map(t => t.trim())))
-    ).sort();
 
     const filtered = questions
         .filter(q => {
-            const matchCompany = selectedCompany
-                ? q.companies.toLowerCase().includes(selectedCompany.toLowerCase())
-                : true;
-            const matchTopic = selectedTopic
-                ? q.topics.toLowerCase().includes(selectedTopic.toLowerCase())
-                : true;
-            const matchSearch = searchTerm
-                ? q.question.toLowerCase().includes(searchTerm.toLowerCase())
-                : true;
+            const matchCompany = selectedCompany ? q.companies.toLowerCase().includes(selectedCompany.toLowerCase()) : true;
+            const matchTopic = selectedTopic ? q.topics.toLowerCase().includes(selectedTopic.toLowerCase()) : true;
+            const matchSearch = searchTerm ? q.question.toLowerCase().includes(searchTerm.toLowerCase()) : true;
             return matchCompany && matchTopic && matchSearch;
         })
         .sort((a, b) => {
@@ -92,23 +75,25 @@ export default function QuestionTable() {
             }
 
             const order = { EASY: 1, MEDIUM: 2, HARD: 3 };
-
             return sortDir === 'asc'
                 ? order[a.difficulty as keyof typeof order] - order[b.difficulty as keyof typeof order]
                 : order[b.difficulty as keyof typeof order] - order[a.difficulty as keyof typeof order];
         });
 
-    const difficultyColor = (level: string) => {
+    const difficultyTag = (level: string) => {
+        const base = 'text-xs font-semibold px-2 py-[1px] rounded-full';
         switch (level) {
-            case 'EASY':
-                return 'bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold';
-            case 'MEDIUM':
-                return 'bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-semibold';
-            case 'HARD':
-                return 'bg-pink-100 text-pink-700 px-2 py-1 rounded-full text-xs font-semibold';
-            default:
-                return '';
+            case 'EASY': return `${base} bg-green-100 text-green-700`;
+            case 'MEDIUM': return `${base} bg-yellow-100 text-yellow-700`;
+            case 'HARD': return `${base} bg-red-100 text-red-700`;
+            default: return base;
         }
+    };
+
+    const statusTag = (done: boolean) => {
+        return done
+            ? 'inline-block w-5 h-5 bg-green-400 rounded-sm'
+            : 'inline-block w-5 h-5 bg-gray-300 rounded-sm';
     };
 
     const toggleSort = (field: 'difficulty' | 'frequency') => {
@@ -121,93 +106,115 @@ export default function QuestionTable() {
     };
 
     return (
-        <div className="p-6 overflow-x-auto">
-            <div className="flex flex-wrap gap-4 mb-4 items-center">
-                <input
-                    type="text"
-                    placeholder="Search problems..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="border px-2 py-1 rounded w-full sm:w-60"
-                />
+        <div className="p-6 overflow-x-auto font-mono">
+            {/* Filters with side padding */}
+            <div className="px-6">
+                <div className="flex flex-wrap gap-4 mb-4 items-center text-sm">
+                    <input
+                        type="text"
+                        placeholder="Search problems..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="border px-2 py-1 rounded w-full sm:w-64"
+                    />
 
-                <div>
-                    <label className="mr-2 font-semibold text-black">Company:</label>
                     <select
                         className="border px-2 py-1 rounded"
                         value={selectedCompany}
                         onChange={e => setSelectedCompany(e.target.value)}
                     >
-                        <option value="">All</option>
-                        {allCompanies.map(company => (
-                            <option key={company} value={company}>
-                                {company}
-                            </option>
+                        <option value="">All Companies</option>
+                        {allCompanies.map(c => (
+                            <option key={c} value={c}>{c}</option>
                         ))}
                     </select>
-                </div>
 
-                <div>
-                    <label className="mr-2 font-semibold text-black">Topic:</label>
                     <select
                         className="border px-2 py-1 rounded"
                         value={selectedTopic}
                         onChange={e => setSelectedTopic(e.target.value)}
                     >
-                        <option value="">All</option>
-                        {allTopics.map(topic => (
-                            <option key={topic} value={topic}>
-                                {topic}
-                            </option>
+                        <option value="">All Topics</option>
+                        {allTopics.map(t => (
+                            <option key={t} value={t}>{t}</option>
                         ))}
                     </select>
                 </div>
             </div>
 
-            <table className="min-w-full text-sm text-left border border-gray-300">
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th className="px-3 py-2">Status</th>
-                        <th className="px-3 py-2">Star</th>
-                        <th className="px-3 py-2">Problem</th>
-                        <th
-                            className="px-3 py-2 cursor-pointer"
-                            onClick={() => toggleSort('difficulty')}
-                        >
-                            Difficulty <ArrowUpDown className="inline-block w-4 h-4 ml-1" />
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filtered.map((q, idx) => (
-                        <tr key={idx} className="border-t hover:bg-gray-50">
-                            <td className="px-3 py-2">
-                                <input
-                                    type="checkbox"
-                                    checked={completed.includes(q.question)}
-                                    onChange={() => toggleComplete(q.question)}
-                                    className="accent-blue-600"
-                                />
-                            </td>
-                            <td className="px-3 py-2 cursor-pointer" onClick={() => toggleStar(q.question)}>
-                                {starred.includes(q.question) ? (
-                                    <Star className="text-yellow-400 fill-yellow-400 w-5 h-5" />
-                                ) : (
-                                    <StarOff className="text-yellow-400 w-5 h-5" />
-                                )}
-                            </td>
-                            <td className="px-3 py-2 text-black font-medium">
-                                <Link href={q.link} target="_blank" className="hover:underline text-blue-700">
-                                    {q.question} ↗
-                                </Link>
-                            </td>
-                            <td className="px-3 py-2">
-                                <span className={difficultyColor(q.difficulty)}>{q.difficulty}</span>
-                            </td>
+            <div className="px-6"> {/* Add side padding */}
+                <table className="w-full text-sm table-auto">
+                    <thead className="border-b border-gray-300 text-left text-xs text-gray-600">
+                        <tr>
+                            <th className="pb-2 w-[1%]">✔</th>
+                            <th className="pb-2 w-[1%]">★</th>
+                            <th className="pb-2 w-[40%]">Problem</th>
+                            <th className="pb-2 w-[30%]">Topics</th>
+                            <th className="pb-2 cursor-pointer w-[1%]" onClick={() => toggleSort('difficulty')}>
+                                Difficulty <ArrowUpDown className="inline w-4 h-4 ml-1" />
+                            </th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {filtered.map((q, idx) => {
+                            const topicsArray =
+                                typeof q.topics === 'string'
+                                    ? q.topics.split(',').map(t => t.trim())
+                                    : Array.isArray(q.topics)
+                                        ? q.topics
+                                        : [];
+
+                            return (
+                                <tr key={idx} className="border-t border-gray-200 hover:bg-gray-50">
+                                    <td className="py-2 w-[1%]">
+                                        <button
+                                            onClick={() => toggleComplete(q.question)}
+                                            className="focus:outline-none"
+                                            aria-label="toggle complete"
+                                        >
+                                            {completed.includes(q.question) ? (
+                                                <span className="text-green-600">✔</span>
+                                            ) : (
+                                                <span className="text-gray-400">☐</span>
+                                            )}
+                                        </button>
+                                    </td>
+                                    <td className="py-2 w-[1%]">
+                                        <button onClick={() => toggleStar(q.question)} className="text-yellow-500">
+                                            {starred.includes(q.question) ? (
+                                                <Star className="w-4 h-4 fill-yellow-400" />
+                                            ) : (
+                                                <StarOff className="w-4 h-4" />
+                                            )}
+                                        </button>
+                                    </td>
+                                    <td className="py-2 w-[40%]">
+                                        <Link
+                                            href={q.link}
+                                            target="_blank"
+                                            className="hover:underline text-blue-700 font-semibold"
+                                        >
+                                            {q.question} ↗
+                                        </Link>
+                                    </td>
+                                    <td className="py-2 w-[30%] text-gray-700">
+                                        <div className="truncate" title={topicsArray.join(', ')}>
+                                            {topicsArray.slice(0, 4).join(', ')}
+                                            {topicsArray.length > 4 ? ', ...' : ''}
+                                        </div>
+                                    </td>
+                                    <td className="py-2 w-[1%]">
+                                        <span className={difficultyTag(q.difficulty)}>{q.difficulty}</span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+
+            </div>
+
+
         </div>
     );
 }
