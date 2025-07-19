@@ -1,4 +1,4 @@
-// Updated QuestionTable.tsx with persistent filters
+// Updated QuestionTable.tsx without pagination
 
 'use client';
 
@@ -16,38 +16,40 @@ interface Question {
     topics: string;
 }
 
-const QUESTIONS_PER_PAGE = 15;
-
 export default function QuestionTable() {
     const [starred, setStarred] = useState<string[]>([]);
     const [completed, setCompleted] = useState<string[]>([]);
     const [selectedCompany, setSelectedCompany] = useState('');
     const [selectedTopic, setSelectedTopic] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
-    const [page, setPage] = useState(1);
     const [sortBy, setSortBy] = useState<'difficulty' | 'frequency' | ''>('');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
     useEffect(() => {
-        const savedStars = JSON.parse(localStorage.getItem('starred') || '[]');
-        const savedCompleted = JSON.parse(localStorage.getItem('completed') || '[]');
-        const savedCompany = localStorage.getItem('selectedCompany') || '';
-        const savedTopic = localStorage.getItem('selectedTopic') || '';
-
-        setStarred(savedStars);
-        setCompleted(savedCompleted);
-        setSelectedCompany(savedCompany);
-        setSelectedTopic(savedTopic);
+        if (typeof window !== 'undefined') {
+            const savedStars = JSON.parse(localStorage.getItem('starred') || '[]');
+            const savedCompleted = JSON.parse(localStorage.getItem('completed') || '[]');
+            const savedCompany = localStorage.getItem('selectedCompany') || '';
+            const savedTopic = localStorage.getItem('selectedTopic') || '';
+            setStarred(savedStars);
+            setCompleted(savedCompleted);
+            setSelectedCompany(savedCompany);
+            setSelectedTopic(savedTopic);
+        }
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('starred', JSON.stringify(starred));
-        localStorage.setItem('completed', JSON.stringify(completed));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('starred', JSON.stringify(starred));
+            localStorage.setItem('completed', JSON.stringify(completed));
+        }
     }, [starred, completed]);
 
     useEffect(() => {
-        localStorage.setItem('selectedCompany', selectedCompany);
-        localStorage.setItem('selectedTopic', selectedTopic);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('selectedCompany', selectedCompany);
+            localStorage.setItem('selectedTopic', selectedTopic);
+        }
     }, [selectedCompany, selectedTopic]);
 
     const toggleStar = (title: string) => {
@@ -88,27 +90,13 @@ export default function QuestionTable() {
             if (sortBy === 'frequency') {
                 return sortDir === 'asc' ? a.frequency - b.frequency : b.frequency - a.frequency;
             }
-            type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
 
-            const order: Record<Difficulty, number> = {
-                EASY: 1,
-                MEDIUM: 2,
-                HARD: 3,
-            };
+            const order = { EASY: 1, MEDIUM: 2, HARD: 3 };
 
-            if (sortBy === 'difficulty') {
-                return sortDir === 'asc'
-                    ? order[a.difficulty as Difficulty] - order[b.difficulty as Difficulty]
-                    : order[b.difficulty as Difficulty] - order[a.difficulty as Difficulty];
-            }
-            return 0;
+            return sortDir === 'asc'
+                ? order[a.difficulty as keyof typeof order] - order[b.difficulty as keyof typeof order]
+                : order[b.difficulty as keyof typeof order] - order[a.difficulty as keyof typeof order];
         });
-
-    const totalPages = Math.ceil(filtered.length / QUESTIONS_PER_PAGE);
-    const paginated = filtered.slice(
-        (page - 1) * QUESTIONS_PER_PAGE,
-        page * QUESTIONS_PER_PAGE
-    );
 
     const difficultyColor = (level: string) => {
         switch (level) {
@@ -139,10 +127,7 @@ export default function QuestionTable() {
                     type="text"
                     placeholder="Search problems..."
                     value={searchTerm}
-                    onChange={e => {
-                        setSearchTerm(e.target.value);
-                        setPage(1);
-                    }}
+                    onChange={e => setSearchTerm(e.target.value)}
                     className="border px-2 py-1 rounded w-full sm:w-60"
                 />
 
@@ -151,10 +136,7 @@ export default function QuestionTable() {
                     <select
                         className="border px-2 py-1 rounded"
                         value={selectedCompany}
-                        onChange={e => {
-                            setSelectedCompany(e.target.value);
-                            setPage(1);
-                        }}
+                        onChange={e => setSelectedCompany(e.target.value)}
                     >
                         <option value="">All</option>
                         {allCompanies.map(company => (
@@ -170,10 +152,7 @@ export default function QuestionTable() {
                     <select
                         className="border px-2 py-1 rounded"
                         value={selectedTopic}
-                        onChange={e => {
-                            setSelectedTopic(e.target.value);
-                            setPage(1);
-                        }}
+                        onChange={e => setSelectedTopic(e.target.value)}
                     >
                         <option value="">All</option>
                         {allTopics.map(topic => (
@@ -200,7 +179,7 @@ export default function QuestionTable() {
                     </tr>
                 </thead>
                 <tbody>
-                    {paginated.map((q, idx) => (
+                    {filtered.map((q, idx) => (
                         <tr key={idx} className="border-t hover:bg-gray-50">
                             <td className="px-3 py-2">
                                 <input
@@ -229,26 +208,6 @@ export default function QuestionTable() {
                     ))}
                 </tbody>
             </table>
-
-            <div className="flex justify-center mt-6 gap-4">
-                <button
-                    className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                >
-                    Previous
-                </button>
-                <span className="font-medium text-black">
-                    Page {page} of {totalPages}
-                </span>
-                <button
-                    className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                >
-                    Next
-                </button>
-            </div>
         </div>
     );
 }
