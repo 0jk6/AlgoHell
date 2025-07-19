@@ -43,15 +43,21 @@ export default function QuestionTable() {
     }, [selectedCompany, selectedTopic]);
 
     const toggleStar = (title: string) => {
-        setStarred(prev => prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]);
+        setStarred(prev =>
+            prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+        );
     };
 
     const toggleComplete = (title: string) => {
-        setCompleted(prev => prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]);
+        setCompleted(prev =>
+            prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+        );
     };
 
-    const allCompanies = Array.from(new Set(questions.flatMap(q => q.companies.split(',').map(c => c.trim())))).sort();
-    //   const allTopics = Array.from(new Set(questions.flatMap(q => q.topics.split(',').map(t => t.trim())))).sort();
+    const allCompanies = Array.from(
+        new Set(questions.flatMap(q => q.companies.split(',').map(c => c.trim())))
+    ).sort();
+
     const allTopics = Array.from(
         new Set(
             questions.flatMap(q =>
@@ -60,12 +66,17 @@ export default function QuestionTable() {
         )
     ).sort();
 
-
     const filtered = questions
         .filter(q => {
-            const matchCompany = selectedCompany ? q.companies.toLowerCase().includes(selectedCompany.toLowerCase()) : true;
-            const matchTopic = selectedTopic ? q.topics.toLowerCase().includes(selectedTopic.toLowerCase()) : true;
-            const matchSearch = searchTerm ? q.question.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+            const matchCompany = selectedCompany
+                ? q.companies.toLowerCase().includes(selectedCompany.toLowerCase())
+                : true;
+            const matchTopic = selectedTopic
+                ? q.topics.toLowerCase().includes(selectedTopic.toLowerCase())
+                : true;
+            const matchSearch = searchTerm
+                ? q.question.toLowerCase().includes(searchTerm.toLowerCase())
+                : true;
             return matchCompany && matchTopic && matchSearch;
         })
         .sort((a, b) => {
@@ -83,17 +94,15 @@ export default function QuestionTable() {
     const difficultyTag = (level: string) => {
         const base = 'text-xs font-semibold px-2 py-[1px] rounded-full';
         switch (level) {
-            case 'EASY': return `${base} bg-green-100 text-green-700`;
-            case 'MEDIUM': return `${base} bg-yellow-100 text-yellow-700`;
-            case 'HARD': return `${base} bg-red-100 text-red-700`;
-            default: return base;
+            case 'EASY':
+                return `${base} bg-green-100 text-green-700`;
+            case 'MEDIUM':
+                return `${base} bg-yellow-100 text-yellow-700`;
+            case 'HARD':
+                return `${base} bg-red-100 text-red-700`;
+            default:
+                return base;
         }
-    };
-
-    const statusTag = (done: boolean) => {
-        return done
-            ? 'inline-block w-5 h-5 bg-green-400 rounded-sm'
-            : 'inline-block w-5 h-5 bg-gray-300 rounded-sm';
     };
 
     const toggleSort = (field: 'difficulty' | 'frequency') => {
@@ -107,7 +116,7 @@ export default function QuestionTable() {
 
     return (
         <div className="p-6 overflow-x-auto font-mono">
-            {/* Filters with side padding */}
+            {/* Filters */}
             <div className="px-6">
                 <div className="flex flex-wrap gap-4 mb-4 items-center text-sm">
                     <input
@@ -125,7 +134,9 @@ export default function QuestionTable() {
                     >
                         <option value="">All Companies</option>
                         {allCompanies.map(c => (
-                            <option key={c} value={c}>{c}</option>
+                            <option key={c} value={c}>
+                                {c}
+                            </option>
                         ))}
                     </select>
 
@@ -136,21 +147,27 @@ export default function QuestionTable() {
                     >
                         <option value="">All Topics</option>
                         {allTopics.map(t => (
-                            <option key={t} value={t}>{t}</option>
+                            <option key={t} value={t}>
+                                {t}
+                            </option>
                         ))}
                     </select>
                 </div>
             </div>
 
-            <div className="px-6"> {/* Add side padding */}
+            {/* Table */}
+            <div className="px-6">
                 <table className="w-full text-sm table-auto">
                     <thead className="border-b border-gray-300 text-left text-xs text-gray-600">
                         <tr>
                             <th className="pb-2 w-[1%]">✔</th>
-                            <th className="pb-2 w-[1%]">★</th>
+                            {/* <th className="pb-2 w-[1%]">★</th> */}
                             <th className="pb-2 w-[40%]">Problem</th>
                             <th className="pb-2 w-[30%]">Topics</th>
-                            <th className="pb-2 cursor-pointer w-[1%]" onClick={() => toggleSort('difficulty')}>
+                            <th
+                                className="pb-2 cursor-pointer w-[1%]"
+                                onClick={() => toggleSort('difficulty')}
+                            >
                                 Difficulty <ArrowUpDown className="inline w-4 h-4 ml-1" />
                             </th>
                         </tr>
@@ -160,15 +177,24 @@ export default function QuestionTable() {
                             const topicsArray =
                                 typeof q.topics === 'string'
                                     ? q.topics.split(',').map(t => t.trim())
-                                    : Array.isArray(q.topics)
-                                        ? q.topics
-                                        : [];
+                                    : [];
 
                             return (
-                                <tr key={idx} className="border-t border-gray-200 hover:bg-gray-50">
+                                <tr
+                                    key={idx}
+                                    onClick={() => toggleComplete(q.question)}
+                                    className={`border-t cursor-pointer ${completed.includes(q.question)
+                                            ? 'bg-green-50 hover:bg-green-100'
+                                            : 'hover:bg-gray-50'
+                                        }`}
+                                >
+
                                     <td className="py-2 w-[1%]">
                                         <button
-                                            onClick={() => toggleComplete(q.question)}
+                                            onClick={e => {
+                                                e.stopPropagation();
+                                                toggleComplete(q.question);
+                                            }}
                                             className="focus:outline-none"
                                             aria-label="toggle complete"
                                         >
@@ -179,19 +205,26 @@ export default function QuestionTable() {
                                             )}
                                         </button>
                                     </td>
-                                    <td className="py-2 w-[1%]">
-                                        <button onClick={() => toggleStar(q.question)} className="text-yellow-500">
+                                    {/* <td className="py-2 w-[1%]">
+                                        <button
+                                            onClick={e => {
+                                                e.stopPropagation();
+                                                toggleStar(q.question);
+                                            }}
+                                            className="text-yellow-500"
+                                        >
                                             {starred.includes(q.question) ? (
                                                 <Star className="w-4 h-4 fill-yellow-400" />
                                             ) : (
                                                 <StarOff className="w-4 h-4" />
                                             )}
                                         </button>
-                                    </td>
+                                    </td> */}
                                     <td className="py-2 w-[40%]">
                                         <Link
                                             href={q.link}
                                             target="_blank"
+                                            onClick={e => e.stopPropagation()}
                                             className="hover:underline text-blue-700 font-semibold"
                                         >
                                             {q.question} ↗
@@ -204,17 +237,16 @@ export default function QuestionTable() {
                                         </div>
                                     </td>
                                     <td className="py-2 w-[1%]">
-                                        <span className={difficultyTag(q.difficulty)}>{q.difficulty}</span>
+                                        <span className={difficultyTag(q.difficulty)}>
+                                            {q.difficulty}
+                                        </span>
                                     </td>
                                 </tr>
                             );
                         })}
                     </tbody>
                 </table>
-
             </div>
-
-
         </div>
     );
 }
