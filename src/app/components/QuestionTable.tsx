@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import questions from '../data/questions.json';
-import { Star, StarOff, ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 
 interface Question {
@@ -15,7 +15,6 @@ interface Question {
 }
 
 export default function QuestionTable() {
-    const [starred, setStarred] = useState<string[]>([]);
     const [completed, setCompleted] = useState<string[]>([]);
     const [selectedCompany, setSelectedCompany] = useState('');
     const [selectedTopic, setSelectedTopic] = useState('');
@@ -25,7 +24,6 @@ export default function QuestionTable() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            setStarred(JSON.parse(localStorage.getItem('starred') || '[]'));
             setCompleted(JSON.parse(localStorage.getItem('completed') || '[]'));
             setSelectedCompany(localStorage.getItem('selectedCompany') || '');
             setSelectedTopic(localStorage.getItem('selectedTopic') || '');
@@ -33,20 +31,13 @@ export default function QuestionTable() {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('starred', JSON.stringify(starred));
         localStorage.setItem('completed', JSON.stringify(completed));
-    }, [starred, completed]);
+    }, [completed]);
 
     useEffect(() => {
         localStorage.setItem('selectedCompany', selectedCompany);
         localStorage.setItem('selectedTopic', selectedTopic);
     }, [selectedCompany, selectedTopic]);
-
-    const toggleStar = (title: string) => {
-        setStarred(prev =>
-            prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
-        );
-    };
 
     const toggleComplete = (title: string) => {
         setCompleted(prev =>
@@ -84,7 +75,6 @@ export default function QuestionTable() {
             if (sortBy === 'frequency') {
                 return sortDir === 'asc' ? a.frequency - b.frequency : b.frequency - a.frequency;
             }
-
             const order = { EASY: 1, MEDIUM: 2, HARD: 3 };
             return sortDir === 'asc'
                 ? order[a.difficulty as keyof typeof order] - order[b.difficulty as keyof typeof order]
@@ -115,10 +105,31 @@ export default function QuestionTable() {
     };
 
     return (
-        <div className="p-6 overflow-x-auto font-mono">
+        <div className="min-h-screen bg-white text-black font-mono">
+            {/* ✅ Navbar */}
+            <nav className="flex justify-between items-center px-6 py-2 border-b shadow-sm bg-gray-50">
+                <div className="text-xl font-bold text-blue-700 tracking-tight">AlgoHell</div>
+                <div className="flex items-center gap-4 text-sm">
+                    {/* <a
+                        href="#"
+                        className="text-gray-700 border border-gray-300 px-3 py-1 rounded hover:bg-gray-100"
+                    >
+                        Login with GitHub
+                    </a> */}
+                    <a
+                        href="https://github.com/0jk6/AlgoHell" // Replace with actual link
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-700 border border-gray-300 px-3 py-1 rounded hover:bg-yellow-100"
+                    >
+                        ⭐ Star on GitHub
+                    </a>
+                </div>
+            </nav>
+
             {/* Filters */}
-            <div className="px-6">
-                <div className="flex flex-wrap gap-4 mb-4 items-center text-sm">
+            <div className="px-6 mt-6">
+                <div className="flex flex-wrap gap-4 mb-2 items-center text-sm">
                     <input
                         type="text"
                         placeholder="Search problems..."
@@ -153,7 +164,19 @@ export default function QuestionTable() {
                         ))}
                     </select>
                 </div>
+
+                {/* 🎯 Problem Count and ✅ Completed Count */}
+                <div className="text-sm text-gray-600 mb-4">
+                    Total <span className="font-semibold">{filtered.length}</span> problem
+                    {filtered.length !== 1 ? 's' : ''} : {' '}
+                    <span className="font-semibold">
+                        {filtered.filter(q => completed.includes(q.question)).length}
+                    </span>{' '}
+                    completed
+                </div>
             </div>
+
+
 
             {/* Table */}
             <div className="px-6">
@@ -161,7 +184,6 @@ export default function QuestionTable() {
                     <thead className="border-b border-gray-300 text-left text-xs text-gray-600">
                         <tr>
                             <th className="pb-2 w-[1%]">✔</th>
-                            {/* <th className="pb-2 w-[1%]">★</th> */}
                             <th className="pb-2 w-[40%]">Problem</th>
                             <th className="pb-2 w-[30%]">Topics</th>
                             <th
@@ -184,11 +206,10 @@ export default function QuestionTable() {
                                     key={idx}
                                     onClick={() => toggleComplete(q.question)}
                                     className={`border-t cursor-pointer ${completed.includes(q.question)
-                                            ? 'bg-green-50 hover:bg-green-100'
-                                            : 'hover:bg-gray-50'
+                                        ? 'bg-green-50 hover:bg-green-100'
+                                        : 'hover:bg-gray-50'
                                         }`}
                                 >
-
                                     <td className="py-2 w-[1%]">
                                         <button
                                             onClick={e => {
@@ -205,21 +226,6 @@ export default function QuestionTable() {
                                             )}
                                         </button>
                                     </td>
-                                    {/* <td className="py-2 w-[1%]">
-                                        <button
-                                            onClick={e => {
-                                                e.stopPropagation();
-                                                toggleStar(q.question);
-                                            }}
-                                            className="text-yellow-500"
-                                        >
-                                            {starred.includes(q.question) ? (
-                                                <Star className="w-4 h-4 fill-yellow-400" />
-                                            ) : (
-                                                <StarOff className="w-4 h-4" />
-                                            )}
-                                        </button>
-                                    </td> */}
                                     <td className="py-2 w-[40%]">
                                         <Link
                                             href={q.link}
